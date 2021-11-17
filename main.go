@@ -17,6 +17,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -90,7 +92,7 @@ func main() {
 	if tokenEndpoint != "" {
 		mux.Handle("/_token", tokenProxyHandler(tokenEndpoint, repoPrefix))
 	}
-	mux.Handle("/v2/", registryAPIProxy(reg, auth))
+	mux.Handle("/v2/", basicAuth(registryAPIProxy(reg, auth)))
 
 	addr := ":" + port
 	handler := captureHostHeader(mux)
@@ -122,6 +124,29 @@ func discoverTokenService(registryHost string) (string, error) {
 		return "", fmt.Errorf("cannot locate 'realm' in %s response header www-authenticate: %s", url, hdr)
 	}
 	return matches[1], nil
+}
+
+func basicAuth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if ok {
+			usernameHash := sha256.Sum256([]byte(username))
+			passwordHash := sha256.Sum256([]byte(password))
+			expectedUsernameHash := sha256.Sum256([]byte("admin"))
+			expectedPasswordHash := sha256.Sum256([]byte("password"))
+
+			usernameMatch := (subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1)
+			passwordMatch := (subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1)
+
+			if usernameMatch && passwordMatch {
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	})
 }
 
 // captureHostHeader is a middleware to capture Host header in a context key.
