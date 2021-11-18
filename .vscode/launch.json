@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Package",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "env": {
+                "PORT": "5000",
+                "REGISTRY_HOST": "europe-west1-docker.pkg.dev",
+                "REPO_PREFIX": "legitbee-ecdc5/legitbee",
+                "GOOGLE_APPLICATION_CREDENTIALS": "/workspaces/serverless-registry-proxy/key.json",
+                "BASIC_USERNAME": "admin",
+                "BASIC_PASSWORD_SHA256_BASE64": "XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg=" // password :  echo -n "password" | sha256sum | cut -d' ' -f1  | xxd -r -p | base64
+            },
+            "program": "${workspaceFolder}"
+        }
+    ]
+}

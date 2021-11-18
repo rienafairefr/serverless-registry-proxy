@@ -2,3 +2,5 @@ key.json
 *.pem
 *.crt
 *.cert
+
+serverless-registry-proxy

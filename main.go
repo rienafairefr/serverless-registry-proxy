@@ -132,8 +132,11 @@ func basicAuth(next http.HandlerFunc) http.HandlerFunc {
 		if ok {
 			usernameHash := sha256.Sum256([]byte(username))
 			passwordHash := sha256.Sum256([]byte(password))
-			expectedUsernameHash := sha256.Sum256([]byte("admin"))
-			expectedPasswordHash := sha256.Sum256([]byte("password"))
+			expectedUsernameHash := sha256.Sum256([]byte(os.Getenv("BASIC_USERNAME")))
+			expectedPasswordHash, error := base64.StdEncoding.DecodeString(os.Getenv("BASIC_PASSWORD_SHA256_BASE64"))
+			if error != nil {
+				log.Fatalf("error decoding the password hash from env: %+v", error)
+			}
 
 			usernameMatch := (subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1)
 			passwordMatch := (subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1)
